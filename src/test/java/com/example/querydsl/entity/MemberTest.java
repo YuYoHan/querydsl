@@ -1,5 +1,6 @@
 package com.example.querydsl.entity;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import lombok.extern.log4j.Log4j2;
@@ -69,8 +70,8 @@ class MemberTest {
 
         // 확인
         List<Member> members = em.createQuery(
-                "select m from query_members m",
-                Member.class)
+                        "select m from query_members m",
+                        Member.class)
                 .getResultList();
 
         for (Member member : members) {
@@ -135,5 +136,76 @@ class MemberTest {
                         , member.age.eq(10))
                 .fetch();
         assertThat(result.size()).isEqualTo(1);
+    }
+
+    @Test
+    void resultFetch() {
+        List<Member> fetch = queryFactory
+                .selectFrom(member)
+                .fetch();
+        Member fetchOne = queryFactory
+                .selectFrom(member)
+                .fetchOne();
+
+        Member fetchFirst = queryFactory
+                .selectFrom(member)
+                .fetchFirst();
+
+        QueryResults<Member> results = queryFactory
+                .selectFrom(member)
+                .fetchResults();
+        results.getTotal();
+
+        queryFactory
+                .selectFrom(member)
+                .fetchCount();
+    }
+
+    /*
+    *   회원 정렬 순서
+    *   1. 회원 나이 내림차순(desc)
+    *   2. 회원 이름 올림차순(asc)
+    *   단 2에서 회원 이름이 없으면 마지막에 출력(nulls last)
+    * */
+    @Test
+    void sort() {
+        em.persist(Member.builder().userName(null).age(18));
+        em.persist(Member.builder().userName("member5").age(18));
+        em.persist(Member.builder().userName("member6").age(18));
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(18))
+                .orderBy(member.age.desc(), member.userName.asc().nullsLast())
+                .fetch();
+
+        Member member5 = result.get(0);
+        Member member6 = result.get(1);
+        Member memberNull = result.get(2);
+
+        assertThat(member5.getUserName()).isEqualTo("member5");
+        assertThat(member6.getUserName()).isEqualTo("member6");
+        assertThat(memberNull.getUserName()).isNull();
+    }
+
+    // 페이징
+    @Test
+    void paging1() {
+        queryFactory
+                .selectFrom(member)
+                .orderBy(member.userName.desc())
+                .offset(1)
+                .limit(2)
+                .fetch();
+    }
+
+    @Test
+    void paging2() {
+        queryFactory
+                .selectFrom(member)
+                .orderBy(member.userName.desc())
+                .offset(1)
+                .limit(2)
+                .fetchResults();
     }
 }

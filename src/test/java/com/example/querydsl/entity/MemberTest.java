@@ -116,4 +116,24 @@ class MemberTest {
                 .fetchOne();
         assertThat(findMember.getUserName()).isEqualTo("member1");
     }
+
+    @Test
+    void search() {
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.userName.eq("member1")
+                        .and(member.age.between(10, 20)))
+                .fetchOne();
+        assertThat(findMember.getUserName()).isEqualTo("member1");
+    }
+
+    @Test
+    void search2() {
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.userName.eq("member1")
+                        , member.age.eq(10))
+                .fetch();
+        assertThat(result.size()).isEqualTo(1);
+    }
 }

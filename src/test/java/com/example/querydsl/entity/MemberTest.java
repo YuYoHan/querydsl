@@ -246,4 +246,37 @@ class MemberTest {
         assertThat(teamA.get(team.name)).isEqualTo("teamA");
         assertThat(teamA.get(member.age.avg())).isEqualTo(15);
     }
+
+    // 팀 A에 속한 모든 회원
+    @Test
+    void join() {
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .join(member.team, team)
+                .where(team.name.eq("teamA"))
+                .fetch();
+
+        // extracting은 AssertJ 라이브러리에서 제공하는 메서드 중 하나로,
+        // 객체나 컬렉션에서 원하는 값을 추출하여 검증할 때 사용
+        assertThat(result).extracting("userName")
+                // containsExactly는 AssertJ 라이브러리에서 제공하는 메서드 중 하나로,
+                // 주어진 컬렉션이나 배열이 정확하게 특정 순서로 주어진 값들을 포함하는지를 검증하는 데 사용
+                .containsExactly("member1", "member2");
+    }
+
+
+    @Test
+    void theta_join() {
+        em.persist(Member.builder().userName("teamA"));
+        em.persist(Member.builder().userName("teamB"));
+
+        // 모든 멤버, 팀 테이블을 조회하고
+        // 조인한 테이블에서 멤버의 이름이랑 팀의 이름이 같은거를 찾아서
+        // 결과를 가져온다.
+        queryFactory
+                .select(member)
+                .from(member, team)
+                .where(member.userName.eq(team.name))
+                .fetch();
+    }
 }

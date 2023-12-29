@@ -3,6 +3,7 @@ package com.example.querydsl.entity;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
@@ -441,6 +442,26 @@ class MemberTest {
                         .when(member.age.between(21,30)).then("21~30살")
                         .otherwise("기타"))
                 .from(member)
+                .fetch();
+    }
+
+    // 상수
+    @Test
+    void constant() {
+        queryFactory
+                .select(member.userName, Expressions.constant("A"))
+                .from(member)
+                .fetch();
+    }
+
+    // 문자 더하기
+    @Test
+    void concat() {
+        // {userName}_{age}
+        queryFactory
+                .select(member.userName.concat("_").concat(member.age.stringValue()))
+                .from(member)
+                .where(member.userName.eq("member1"))
                 .fetch();
     }
 }

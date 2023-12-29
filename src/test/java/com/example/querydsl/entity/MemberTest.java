@@ -4,6 +4,8 @@ import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceUnit;
 import lombok.extern.log4j.Log4j2;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +31,7 @@ class MemberTest {
     @Autowired
     EntityManager em;
     JPAQueryFactory queryFactory;
+
 
     @Test
     public void testEntity() {
@@ -284,11 +287,70 @@ class MemberTest {
     // JPQL: SELECT m, t FROM Member m LEFT JOIN m.team t on t.name = 'teamA'
     // SQL: SELECT m.*, t.* FROM Member m LEFT JOIN Team t ON m.TEAM_ID=t.id and t.name='teamA'
     @Test
-    void join_on_filtering() {
+     void join_on_filtering() {
         List<Tuple> result = queryFactory
                 .select(member, team)
                 .from(member)
-                .leftJoin(member.team, team).on(team.name.eq("teamA"))
+                .leftJoin(team).on(team.name.eq("teamA"))
                 .fetch();
+    }
+    /**
+     * 2. 연관관계 없는 엔티티 외부 조인
+     * 예) 회원의 이름과 팀의 이름이 같은 대상 외부 조인
+     * JPQL: SELECT m, t FROM Member m LEFT JOIN Team t on m.username = t.name
+     * SQL: SELECT m.*, t.* FROM Member m LEFT JOIN Team t ON m.username = t.name
+     */
+    @Test
+    void join_on_no_relation() {
+        em.persist(Member.builder().userName("teamA"));
+        em.persist(Member.builder().userName("teamB"));
+
+        // 모든 멤버, 팀 테이블을 조회하고
+        // 조인한 테이블에서 멤버의 이름이랑 팀의 이름이 같은거를 찾아서
+        // 결과를 가져온다.
+        queryFactory
+                .select(member, team)
+                .from(member)
+                .leftJoin(team).on(member.userName.eq(team.name))ㅇ
+                .where(member.userName.eq(team.name))
+                .fetch();
+    }
+
+
+    @PersistenceUnit
+    EntityManagerFactory emf;
+    // 페치조인 미적용
+    // 지연로딩으로 Member, Team SQL 쿼리 각각 실행
+    @Test
+    void fetchJoinNo() throws Exception {
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.userName.eq("member1"))
+                .fetchOne();
+
+        // findMember.getTeam()이 로딩이 된 엔티티인지 아닌지 알려주는 기능
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+
+        assertThat(loaded).as("페치 조인 미적용").isFalse();
+    }
+
+    @Test
+    void fetchJoinUse() throws Exception {
+        em.flush();
+        em.clear();
+
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .join(member.team, team).fetchJoin()
+                .where(member.userName.eq("member1"))
+                .fetchOne();
+
+        // findMember.getTeam()이 로딩이 된 엔티티인지 아닌지 알려주는 기능
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+
+        assertThat(loaded).as("페치 조인 적용").isTrue();
     }
 }

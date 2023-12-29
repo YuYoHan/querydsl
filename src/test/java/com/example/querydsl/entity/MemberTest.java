@@ -2,6 +2,7 @@ package com.example.querydsl.entity;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -19,6 +20,7 @@ import java.util.List;
 
 import static com.example.querydsl.entity.QMember.member;
 import static com.example.querydsl.entity.QTeam.team;
+import static com.querydsl.jpa.JPAExpressions.*;
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -311,7 +313,7 @@ class MemberTest {
         queryFactory
                 .select(member, team)
                 .from(member)
-                .leftJoin(team).on(member.userName.eq(team.name))ㅇ
+                .leftJoin(team).on(member.userName.eq(team.name))
                 .where(member.userName.eq(team.name))
                 .fetch();
     }
@@ -353,4 +355,71 @@ class MemberTest {
 
         assertThat(loaded).as("페치 조인 적용").isTrue();
     }
+
+    // 나이가 가장 많은 회원 조회
+    @Test
+    void subQuery() {
+
+        // 이걸 하는 이유는 서브쿼리가 member하고 중복되지 않게 하기위해서
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.eq(
+                        select(memberSub.age.max())
+                                .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age").containsExactly(20);
+    }
+
+    // 나이가 평균 이상인 회원
+    @Test
+    void subQueryGoe() {
+
+        // 이걸 하는 이유는 서브쿼리가 member하고 중복되지 않게 하기위해서
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.goe(
+                        select(memberSub.age.avg())
+                                .from(memberSub)
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age").containsExactly(20);
+    }
+
+    @Test
+    void subQueryIn() {
+
+        // 이걸 하는 이유는 서브쿼리가 member하고 중복되지 않게 하기위해서
+        QMember memberSub = new QMember("memberSub");
+
+        List<Member> result = queryFactory
+                .selectFrom(member)
+                .where(member.age.in(
+                        select(memberSub.age)
+                                .from(memberSub)
+                                .where(memberSub.age.gt(10))
+                ))
+                .fetch();
+
+        assertThat(result).extracting("age").containsExactly(20);
+    }
+
+    @Test
+    void selectSubQuery() {
+        QMember memberSub = new QMember("memberSub");
+        queryFactory
+                .select(member.userName,
+                        select(memberSub.age.avg())
+                                .from(memberSub))
+                .from(member)
+                .fetch();
+    }
+
+
 }

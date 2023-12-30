@@ -1,7 +1,11 @@
 package com.example.querydsl.entity;
 
+import com.example.querydsl.domain.MemberDTO;
+import com.example.querydsl.domain.QMemberDTO;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -484,6 +488,68 @@ class MemberTest {
             String userName = tuple.get(member.userName);
             Integer age = tuple.get(member.age);
         }
+    }
+
+    // JPA에서 DTO 조회
+    @Test
+    void findDtoByJPQL() {
+        em.createQuery(
+                "select new com.example.querydsl.domain.MemberDTO(m.userName, m.age) " +
+                        "from query_members m", MemberDTO.class)
+                .getResultList();
+    }
+
+    @Test
+    void findDtoBySetter() {
+        queryFactory
+                .select(Projections.bean(MemberDTO.class,
+                        member.userName,
+                        member.age))
+                .from(member)
+                .fetch();
+    }
+
+    @Test
+    void findDtoByField() {
+        queryFactory
+                .select(Projections.fields(MemberDTO.class,
+                        member.userName,
+                        member.age))
+                .from(member)
+                .fetch();
+    }
+
+    @Test
+    void findDtoByConstructor() {
+        queryFactory
+                .select(Projections.constructor(MemberDTO.class,
+                        member.userName,
+                        member.age))
+                .from(member)
+                .fetch();
+    }
+
+    @Test
+    void findUserDto() {
+
+        QMember qMember = new QMember("memberSub");
+
+        queryFactory
+                .select(Projections.constructor(MemberDTO.class,
+                        member.userName.as("name"),
+                        ExpressionUtils.as(JPAExpressions
+                                .select(qMember.age.max())
+                                .from(qMember), "age")))
+                .from(member)
+                .fetch();
+    }
+
+    @Test
+    void findDtoByQueryProjection() {
+        List<MemberDTO> result = queryFactory
+                .select(new QMemberDTO(member.userName, member.age))
+                .from(member)
+                .fetch();
     }
 
 

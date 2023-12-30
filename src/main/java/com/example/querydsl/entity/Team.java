@@ -8,8 +8,6 @@ import java.util.List;
 
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 @Getter
 @ToString(of = {"id", "name"})
 public class Team {
@@ -21,4 +19,12 @@ public class Team {
 
     @OneToMany(mappedBy = "team")
     private List<Member> members = new ArrayList<>();
+
+
+    @Builder
+    public Team(Long id, String name, List<Member> members) {
+        this.id = id;
+        this.name = name;
+        this.members = members;
+    }
 }

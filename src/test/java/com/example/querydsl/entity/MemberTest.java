@@ -464,4 +464,27 @@ class MemberTest {
                 .where(member.userName.eq("member1"))
                 .fetch();
     }
+
+    @Test
+    void simpleProjection() {
+        List<String> result = queryFactory
+                .select(member.userName)
+                .from(member)
+                .fetch();
+    }
+
+    @Test
+    void tupleProjection() {
+        List<Tuple> result = queryFactory
+                .select(member.userName, member.age)
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            String userName = tuple.get(member.userName);
+            Integer age = tuple.get(member.age);
+        }
+    }
+
+
 }

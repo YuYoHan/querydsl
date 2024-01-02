@@ -612,4 +612,57 @@ class MemberTest {
     private BooleanExpression allEq(String userNameCond, Integer ageCond) {
         return userNameEq(userNameCond).and(ageEq(ageCond));
     }
+
+    @Test
+    @Commit
+    void bulkUpdate() {
+
+        // 기존에 영속성 컨텍스트랑 DB랑 일치되어 있지만
+        // 여기서 업데이트를 하면 바로 DB가 수정된다.
+        // 그래서 영속성 컨텍스트랑 차이가 생긴다.
+        // 조회를 할 때 변경을 가져오려고 하지만
+        // DB에서 변경되어도 영속성 컨텍스트가 변경되지 않으면
+        // DB 데이터를 버리고 영속성 컨텍스트 데이터를 가져온다.
+        queryFactory
+                .update(member)
+                .set(member.userName, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        // 영속성 컨텍스트 초기화
+        em.flush();
+        em.clear();
+
+        // 영속성 컨텍스트를 초기화해서 비어있기 때문에
+        // DB에서 조회하므로 제대로 나온다.
+        queryFactory
+                .selectFrom(member)
+                .fetch();
+    }
+
+    // 더하기
+    @Test
+    void bulkAdd() {
+        queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                .execute();
+    }
+
+    // 곱하기
+    @Test
+    void bulkMultiplication() {
+        queryFactory
+                .update(member)
+                .set(member.age, member.age.multiply(1))
+                .execute();
+    }
+
+    @Test
+    void bulkDelete() {
+        queryFactory
+                .delete(member)
+                .where(member.age.gt(18))
+                .execute();
+    }
 }

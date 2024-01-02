@@ -6,7 +6,9 @@ import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -579,4 +581,35 @@ class MemberTest {
                 .fetch();
     }
 
+    @Test
+    void dynamicQuery_whereParam() throws Exception{
+        String userNameParam = "member1";
+        Integer ageParam = 10;
+
+        List<Member> result = searchMember2(userNameParam, ageParam);
+        Assertions.assertThat(result.size()).isEqualTo(1);
+    }
+
+    private List<Member> searchMember2(String userNameCond, Integer ageCond) {
+        return queryFactory
+                .selectFrom(member)
+//                .where(userNameEq(userNameCond), ageEq(ageCond))
+                .where(allEq(userNameCond, ageCond))
+                .fetch();
+    }
+
+    private BooleanExpression userNameEq(String userNameCond) {
+        return userNameCond != null ?
+                member.userName.eq(userNameCond) : null;
+    }
+
+    private BooleanExpression ageEq(Integer ageCond) {
+        return ageCond != null ?
+                member.age.eq(ageCond) : null;
+    }
+
+    // 이것의 장점은 아래와 같이 합칠 수 있다는 것이다.
+    private BooleanExpression allEq(String userNameCond, Integer ageCond) {
+        return userNameEq(userNameCond).and(ageEq(ageCond));
+    }
 }

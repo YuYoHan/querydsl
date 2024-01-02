@@ -665,4 +665,32 @@ class MemberTest {
                 .where(member.age.gt(18))
                 .execute();
     }
+
+    @Test
+    void sqlDFunction() {
+        queryFactory
+                .select(
+                        Expressions.stringTemplate(
+                                "function('replace', {0}, {1}, {2})",
+                                member.userName,
+                                "member",
+                                "M"
+                        )).from(member)
+                .fetch();
+    }
+
+    @Test
+    void sqlFunction2() {
+        queryFactory
+                .select(member.userName)
+                .from(member)
+//                .where(member.userName.eq(
+//                        Expressions.stringTemplate(
+//                                "function('lower', {0})",
+//                                member.userName
+//                        )
+//                ))
+                .where(member.userName.eq(member.userName.lower()))
+                .fetch();
+    }
 }

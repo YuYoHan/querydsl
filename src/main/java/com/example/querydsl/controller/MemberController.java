@@ -31,7 +31,7 @@ public class MemberController {
     @GetMapping("/v2/members")
     public ResponseEntity<?> searchMemberV2(MemberSearchCondition condition,
                                             @PageableDefault(
-                                                    sort = "id", direction = Sort.Direction.ASC)
+                                                    sort = "id", direction = Sort.Direction.DESC)
                                             Pageable pageable,
                                             String search) {
         Page<MemberTeamDTO> memberTeamDTOS = memberRepository.searchPageComplex(condition, pageable, search);

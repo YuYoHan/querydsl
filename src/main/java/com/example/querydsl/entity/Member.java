@@ -10,7 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @ToString(of = {"id", "userName", "age"})
 public class Member {
-    @Id @GeneratedValue
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "member_id")
     private Long id;
 

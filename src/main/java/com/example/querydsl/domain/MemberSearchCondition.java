@@ -19,12 +19,21 @@ public class MemberSearchCondition {
     private Integer ageGoe;
     // 나이가 작거나 같거나
     private Integer ageLoe;
+    private String orderBy;
+    private Sort sort;
 
     @Builder
-    public MemberSearchCondition(String userName, String teamName, Integer ageGoe, Integer ageLoe) {
+    public MemberSearchCondition(String userName,
+                                 String teamName,
+                                 Integer ageGoe,
+                                 Integer ageLoe,
+                                 String orderBy,
+                                 Sort sort) {
         this.userName = userName;
         this.teamName = teamName;
         this.ageGoe = ageGoe;
         this.ageLoe = ageLoe;
+        this.orderBy = orderBy;
+        this.sort = sort;
     }
 }

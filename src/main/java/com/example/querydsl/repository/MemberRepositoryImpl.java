@@ -3,9 +3,11 @@ package com.example.querydsl.repository;
 import com.example.querydsl.domain.MemberSearchCondition;
 import com.example.querydsl.domain.MemberTeamDTO;
 import com.example.querydsl.domain.QMemberTeamDTO;
+import com.example.querydsl.entity.Member;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -96,6 +98,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                 .orderBy(sort(pageable))
                 .fetch();
 
+
         // count 쿼리 (조건에 부합하는 로우의 총 개수를 얻는 것이기 때문에 페이징 미적용)
         JPAQuery<Long> countQuery = queryFactory
                 // SQL 상으로는 count(member.id)와 동일
@@ -107,6 +110,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         ageGoe(condition.getAgeGoe()),
                         ageLoe(condition.getAgeLoe()),
                         searchKeyword(search));
+
         // 페이지 시작이거나 컨텐츠의 사이즈가 페이지 사이즈보다 작거나
         // 마지막 페이지 일 대 카운트 쿼리를 호출하지 않는다.
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -133,6 +137,50 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
             }
         }
         return member.id.desc();
+    }
+
+
+    @Override
+    public Page<Member> search2(MemberSearchCondition condition,
+                                Pageable pageable) {
+        JPAQuery<Member> query = queryFactory
+                .selectFrom(member)
+                .where(userNameEq(condition.getUserName()),
+                        teamNameEq(condition.getTeamName()),
+                        ageGoe(condition.getAgeGoe()),
+                        ageLoe(condition.getAgeLoe()))
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize());
+
+        JPAQuery<Long> count = queryFactory
+                .select(member.count())
+                .from(member)
+                .where(userNameEq(condition.getUserName()),
+                        teamNameEq(condition.getTeamName()),
+                        ageGoe(condition.getAgeGoe()),
+                        ageLoe(condition.getAgeLoe()));
+
+        for (Order order : pageable.getSort()) {
+            // PathBuilder는 주어진 엔터티의 동적인 경로를 생성하는 데 사용됩니다.
+            PathBuilder pathBuilder = new PathBuilder(
+                    // 엔티티의 타입 정보를 얻어온다.
+                    member.getType(),
+                    // 엔티티의 메타데이터를 얻어온다.
+                    member.getMetadata());
+            // Order 객체에서 정의된 속성에 해당하는 동적 경로를 얻어오게 됩니다.
+            // 예를 들어, 만약 order.getProperty()가 "userName"이라면,
+            // pathBuilder.get("userName")는 엔터티의 "userName" 속성에 대한 동적 경로를 반환하게 됩니다.
+            // 이 동적 경로는 QueryDSL에서 사용되어 정렬 조건을 만들 때 활용됩니다.
+            PathBuilder sort = pathBuilder.get(order.getProperty());
+
+            query.orderBy(
+                    new OrderSpecifier<>(
+                            order.isAscending() ? ASC : DESC,
+                            sort != null ? sort : member.id
+                    ));
+        }
+        List<Member> result = query.fetch();
+        return PageableExecutionUtils.getPage(result, pageable, count::fetchOne);
     }
 
     private BooleanExpression userNameEq(String userName) {

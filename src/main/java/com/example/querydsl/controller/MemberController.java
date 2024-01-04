@@ -70,4 +70,29 @@ public class MemberController {
         Page<MemberTeamDTO> search2 = memberService.search2(condition, pageable);
         return ResponseEntity.ok().body(search2);
     }
+
+    @GetMapping("/v5/members")
+    public ResponseEntity<?> searchMemberV5(MemberSearchCondition condition,
+                                            Pageable pageable) {
+
+        Page<MemberTeamDTO> memberTeamDTOS = memberService.search3(condition, pageable);
+        Map<String, Object> response = new HashMap<>();
+        // 현재 페이지의 아이템 목록
+        response.put("members", memberTeamDTOS.getContent());
+        // 현재 페이지 번호
+        response.put("nowPageNumber", memberTeamDTOS.getNumber()+1);
+        // 전체 페이지 수
+        response.put("totalPage", memberTeamDTOS.getTotalPages());
+        // 한 페이지에 출력되는 데이터 개수
+        response.put("pageSize", memberTeamDTOS.getSize());
+        // 다음 페이지 존재 여부
+        response.put("hasNextPage", memberTeamDTOS.hasNext());
+        // 이전 페이지 존재 여부
+        response.put("hasPreviousPage", memberTeamDTOS.hasPrevious());
+        // 첫 번째 페이지 여부
+        response.put("isFirstPage", memberTeamDTOS.isFirst());
+        // 마지막 페이지 여부
+        response.put("isLastPage", memberTeamDTOS.isLast());
+        return ResponseEntity.ok().body(response);
+    }
 }

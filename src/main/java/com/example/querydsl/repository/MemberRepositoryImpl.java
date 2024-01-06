@@ -145,6 +145,7 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                                 Pageable pageable) {
         JPAQuery<Member> query = queryFactory
                 .selectFrom(member)
+                .join(member.team, team).fetchJoin()
                 .where(userNameEq(condition.getUserName()),
                         teamNameEq(condition.getTeamName()),
                         ageGoe(condition.getAgeGoe()),

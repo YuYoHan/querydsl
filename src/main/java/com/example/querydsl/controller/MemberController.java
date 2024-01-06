@@ -7,6 +7,7 @@ import com.example.querydsl.repository.MemberJpaRepository;
 import com.example.querydsl.repository.MemberRepository;
 import com.example.querydsl.service.MemberService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -22,6 +23,7 @@ import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
+@Log4j2
 public class MemberController {
     private final MemberJpaRepository memberJpaRepository;
     private final MemberRepository memberRepository;
@@ -60,6 +62,7 @@ public class MemberController {
     @GetMapping("/v3/members")
     public ResponseEntity<?> searchMemberV3(MemberSearchCondition condition,
                                             Pageable pageable) {
+        log.info("condition : " + condition);
         Page<MemberTeamDTO> search = memberService.search(condition, pageable);
         return ResponseEntity.ok().body(search);
     }
@@ -72,7 +75,7 @@ public class MemberController {
     }
 
     @GetMapping("/v5/members")
-    public ResponseEntity<?> searchMemberV5(MemberSearchCondition condition,
+    public ResponseEntity<?> searchMemberV5(@ModelAttribute MemberSearchCondition condition,
                                             Pageable pageable) {
 
         Page<MemberTeamDTO> memberTeamDTOS = memberService.search3(condition, pageable);
